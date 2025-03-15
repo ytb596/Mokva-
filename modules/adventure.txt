@@ -1,0 +1,12 @@
+{
+  "8014033911": {
+    "players": [
+      {
+        "id": 8014033911,
+        "name": "Ngọc nhi"
+      }
+    ],
+    "profession": "Mạo hiểm giả",
+    "items": []
+  }
+}

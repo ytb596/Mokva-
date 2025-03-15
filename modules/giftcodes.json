@@ -1,0 +1,91 @@
+{
+  "5H7ZBWUV": {
+    "value": 67,
+    "expiresAt": 1741004181720,
+    "used": false
+  },
+  "S1WXRWF9": {
+    "value": 21,
+    "expiresAt": 1741051458135,
+    "used": true
+  },
+  "MVJPCW7N": {
+    "value": 67,
+    "expiresAt": 1741088561366,
+    "used": false
+  },
+  "U22PHT3R": {
+    "value": 67,
+    "expiresAt": 1741136810210,
+    "used": true
+  },
+  "ZNS1ICSC": {
+    "value": 500,
+    "expiresAt": 1741138333837,
+    "used": true
+  },
+  "KOLPKA5D": {
+    "value": 10,
+    "expiresAt": 1741955304516,
+    "used": true
+  },
+  "Y2OVGMN0": {
+    "value": 550,
+    "expiresAt": 1741952516384,
+    "used": true
+  },
+  "4BO0YX7P": {
+    "value": 20,
+    "expiresAt": 1741963141362,
+    "formattedExpiresAt": "3/14/2025, 2:39:01 PM",
+    "timezone": "UTC",
+    "maxUses": 1,
+    "uses": 0,
+    "used": true
+  },
+  "359EP7BJ": {
+    "value": 67,
+    "expiresAt": 1741960326428,
+    "formattedExpiresAt": "3/14/2025, 1:52:06 PM",
+    "timezone": "UTC",
+    "maxUses": 1,
+    "uses": 0
+  },
+  "ZZ0UE8Y5": {
+    "value": 67,
+    "expiresAt": 1741960341389,
+    "formattedExpiresAt": "3/14/2025, 1:52:21 PM",
+    "timezone": "UTC",
+    "maxUses": 55,
+    "uses": 0,
+    "used": true
+  },
+  "YTPS6HVJ": {
+    "value": 1100,
+    "expiresAt": 1741962111666,
+    "formattedExpiresAt": "3/14/2025, 2:21:51 PM",
+    "timezone": "UTC",
+    "maxUses": 1,
+    "uses": 0
+  },
+  "Y8V5NLEB": {
+    "value": 1100,
+    "expiresAt": 1741962127367,
+    "formattedExpiresAt": "3/14/2025, 2:22:07 PM",
+    "timezone": "UTC",
+    "maxUses": 110,
+    "uses": 0,
+    "used": true
+  },
+  "EFJKP8CT": {
+    "value": 550,
+    "expiresAt": 1742002472547,
+    "formattedExpiresAt": "3/15/2025, 1:34:32 AM",
+    "timezone": "UTC",
+    "maxUses": 1100,
+    "uses": 1,
+    "redeemedBy": [
+      "8014033911"
+    ]
+  }
+}
