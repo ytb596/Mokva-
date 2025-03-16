@@ -4,11 +4,15 @@
   "ownerID": "8014033911",
   "autoReload": true,
   "EnableTerminalLog": true,
-  "admin_ids": ["8014033911", "8014033911"], 
+  "admin_ids": ["8014033911", "8014033911"],
   "report_settings": {
     "enable_private_report": true,
     "private_report_chat_id": "8014033911",
     "log_reports": true
-  }
+  },
+  "login": {
+    "username": "ngocnhi",
+    "password": "231"
+  },
+  "adminChatId": 8014033911
 }
-

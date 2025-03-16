@@ -1,41 +1,42 @@
 const fs = require("fs");
-
 const usersFile = "./modules/users.json";
 
 module.exports = {
     name: "rank",
+    description: "🏆 Bảng xếp hạng người giàu nhất",
     execute: async (bot, msg) => {
+        const chatId = msg.chat.id;
+
+        // Kiểm tra file users.json, nếu chưa có thì tạo mới
         if (!fs.existsSync(usersFile)) {
-            return bot.sendMessage(msg.chat.id, "❌ Không có dữ liệu người chơi.");
+            fs.writeFileSync(usersFile, "{}");
         }
 
-        let users;
-        try {
-            users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
-        } catch {
-            return bot.sendMessage(msg.chat.id, "❌ Lỗi khi đọc dữ liệu người chơi.");
+        const users = JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+
+        // Lọc người chơi và sắp xếp theo số xu
+        const sortedUsers = Object.keys(users)
+            .map(userId => {
+                return {
+                    id: userId,  // ID Telegram của người chơi
+                    name: users[userId].name || `ID: ${userId}`, // Nếu không có tên, hiển thị ID
+                    xu: users[userId].xu || 0
+                };
+            })
+            .sort((a, b) => b.xu - a.xu);
+
+        // Tạo bảng xếp hạng
+        let rankText = "┏━━━⭓ Nhà Cái Châu Á ━━━━\n";
+        rankText += "┃ 🏆 **BẢNG XẾP HẠNG NGƯỜI GIÀU NHẤT** 🏆\n";
+
+        for (let i = 0; i < sortedUsers.length; i++) {
+            const user = sortedUsers[i];
+            rankText += `┃ #${i + 1} ${user.name} - ${user.xu.toLocaleString()} VND\n`;
         }
 
-        // Tạo danh sách xếp hạng
-        const leaderboard = Object.entries(users)
-            .map(([id, data]) => ({
-                id,
-                name: data.name || `ID: ${id}`, // Nếu có tên thì hiển thị, không có thì hiển thị ID
-                xu: data.xu || 0,
-            }))
-            .sort((a, b) => b.xu - a.xu) // Sắp xếp từ cao đến thấp
-            .slice(0, 10); // Chỉ lấy 10 người giàu nhất
+        rankText += "┗━━━━━━━━━━━━━━━━━━━━━⧕\n";
+        rankText += "🎉 **Admin đặc biệt: senpai** 🎉";
 
-        if (leaderboard.length === 0) {
-            return bot.sendMessage(msg.chat.id, "❌ Không có ai trong bảng xếp hạng.");
-        }
-
-        // Tạo tin nhắn hiển thị
-        let message = "🏆 **Bảng xếp hạng người giàu nhất** 🏆\n\n";
-        leaderboard.forEach((user, index) => {
-            message += `#${index + 1} - **${user.name}**: ${user.xu} xu\n`;
-        });
-
-        bot.sendMessage(msg.chat.id, message);
+        bot.sendMessage(chatId, rankText);
     }
 };

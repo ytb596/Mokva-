@@ -6,7 +6,7 @@ const { execSync } = require("child_process");
 const botStartTime = Date.now();
 
 // Đường dẫn đến file chứa danh sách video
-const videoFilePath = "data_api/cos/cosplay.json";
+const videoFilePath = "data_api/cos/video.json";
 let videoList = [];
 
 // Tải danh sách video vào RAM khi bot khởi động
