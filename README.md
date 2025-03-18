@@ -4,4 +4,8 @@ lưu ý đây là bot chạy trên nodejs nên ae cần hiểu biết về JavaS
 
 ## cách chạy và cài đặt 
 mở terminal nhập npm install để cài các thư viện cần thiết 
-sau khi chạy xong hay nhập npm start hoặc bash start.sh để chạy bot nhé lưu ý hay thay token của bạn 
+sau khi chạy xong hay nhập npm start hoặc bash start.sh để chạy bot online nhé lưu ý hay thay token của bạn 
+## giữ bot hoạt động 24/24
+1. mua vps hoặc dùng hosting
+2. dùng replit + uptimeRobot
+3. từ đánh thức bot cho khỏe 
