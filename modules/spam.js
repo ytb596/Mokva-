@@ -1,6 +1,6 @@
 const { exec } = require("child_process");
 
-const decScriptPath = "/data/data/com.termux/files/home/Bot\\ Tele/dec.py";
+const decScriptPath = "dec.py";
 
 module.exports = {
     name: "spm",

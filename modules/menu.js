@@ -15,31 +15,33 @@ module.exports = {
         for (const file of commandFiles) {
             const command = require(`../modules/${file}`);
 
-            if (command.name && command.description) {
-                commandList.push(`<b>/${command.name}</b> - ${command.description}`);
+            if (command.name) {
+                let cmdText = `<b>/${command.name}</b>`;
+                if (command.description) cmdText += ` - ${command.description}`;
+                commandList.push(cmdText);
             }
         }
 
-        // Nếu danh sách lệnh quá dài, chia nhỏ tin nhắn thành nhiều phần
-        const chunkSize = 4000; // Telegram giới hạn 4096 ký tự, trừ khoảng cách an toàn
+        // Chia nhỏ tin nhắn nếu quá dài
+        const chunkSize = 4000; // Telegram giới hạn 4096 ký tự
         let messageChunks = [];
-        let currentChunk = "";
+        let currentChunk = menuMessage;
 
         commandList.forEach((cmd) => {
-            if ((currentChunk + cmd).length > chunkSize) {
-                messageChunks.push(currentChunk);
+            if ((currentChunk.length + cmd.length) > chunkSize) {
+                messageChunks.push(currentChunk + "\n━━━━━━━━━━━━━━━━━━━");
                 currentChunk = "";
             }
             currentChunk += cmd + "\n";
         });
 
         if (currentChunk.length > 0) {
-            messageChunks.push(currentChunk);
+            messageChunks.push(currentChunk + "\n━━━━━━━━━━━━━━━━━━━");
         }
 
         // Gửi từng phần của danh sách lệnh
         for (const chunk of messageChunks) {
-            await bot.sendMessage(chatId, menuMessage + chunk + "\n━━━━━━━━━━━━━━━━━━━", {
+            await bot.sendMessage(chatId, chunk, {
                 parse_mode: "HTML",
                 disable_web_page_preview: true
             });

@@ -155,9 +155,11 @@
     "formattedExpiresAt": "3/17/2025, 1:59:26 AM",
     "timezone": "UTC",
     "maxUses": 900,
-    "uses": 1,
+    "uses": 3,
     "redeemedBy": [
-      "7418258424"
+      "7418258424",
+      "8014033911",
+      "6237327806"
     ]
   }
 }

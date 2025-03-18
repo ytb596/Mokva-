@@ -1,27 +1,56 @@
 // =============================================================
-// PART 1: Libraries & Basic Configuration
+// PART 1: LIBRARIES & BASIC CONFIGURATION
 // =============================================================
-const TelegramBot = require("node-telegram-bot-api"); // Telegram Bot API (polling nhận tin mới)
-const fs = require("fs");                              // File system operations
-const path = require("path");                          // Path utilities
-const os = require("os");                              // System information
-const chokidar = require("chokidar");                  // File watcher (cho config và reload)
-  
-// Load configuration từ config.json
+const TelegramBot = require("node-telegram-bot-api"); // Bot API (polling: chỉ nhận tin nhắn mới)
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const chokidar = require("chokidar");
+
+// Load config từ config.json
 let config = require("./config.json");
-  
-// Khởi tạo bot với polling (chỉ nhận tin mới)
+
+// Khởi tạo bot với polling (chỉ nhận tin nhắn mới)
 const bot = new TelegramBot(config.token, { polling: true });
-  
+
+// Nếu chạy qua npm start, log ra thông báo
+if (process.env.npm_lifecycle_event === "start") {
+  console.log("[INFO] Process started via npm start");
+}
+
 // =============================================================
-// PART 2: Global Variables & Paths
+// PART 2: GLOBAL VARIABLES, PATHS, LANGUAGE & AUTO-SCOOLD SETTINGS
 // =============================================================
-const modulesPath = path.join(__dirname, "modules");   // Thư mục chứa các module lệnh
-const idFilePath = path.join(modulesPath, "id.json");    // File lưu chat IDs
-const commands = new Map();                            // Map chứa các lệnh (key: command name)
-  
+const modulesPath = path.join(__dirname, "modules");    // Thư mục chứa lệnh external và các file tt.json, id.json
+const idFilePath = path.join(modulesPath, "id.json");     // Lưu danh sách chat ID
+const ttFilePath = path.join(modulesPath, "tt.json");     // Lưu số lượng tương tác (interaction count)
+const commands = new Map();                              // Map chứa các lệnh
+
+// Language dictionary (config.language: "en" hoặc "vi")
+const languageDict = {
+  en: {
+    welcome: "Welcome to our bot!",
+    reloadNotification: "All commands have been loaded, please admin check via VPS.☺️"
+  },
+  vi: {
+    welcome: "Chào mừng bạn đến với bot của chúng tôi!",
+    reloadNotification: "Tất cả các lệnh đã được load, vui lòng admin kiểm tra qua VPS.☺️"
+  }
+};
+const lang = languageDict[config.language] || languageDict.en;
+
+// Auto-scold settings: danh sách từ khóa và phản hồi
+const autoScoldKeywords = ["bot ngu", "đồ ngu", "bot dở", "bot thối", "chửi bot", "bot xấu", "bot kém", "bot chán"];
+const autoScoldResponses = [
+  "Đừng có chửi tui, tao cũng biết mình chưa hoàn hảo!",
+  "Bỏ lời chửi đó đi, hãy nói vấn đề của bạn ra thay vì chỉ chửi nhau!",
+  "Chửi bot chẳng giúp gì, hãy góp ý xây dựng đi!",
+  "Tui không cần nghe lời chửi, hãy cải thiện cách giao tiếp của bạn!",
+  "Đừng chửi, hãy bàn luận thật sự để giải quyết vấn đề!"
+];
+
 // =============================================================
-// PART 3: Logging Utility Functions (with Timestamp)
+// PART 3: LOGGING UTILITY (WITH TIMESTAMP)
 // =============================================================
 function logInfo(message) {
   console.log(`[INFO] [${new Date().toLocaleString()}] ${message}`);
@@ -32,14 +61,14 @@ function logWarn(message) {
 function logError(message, error) {
   console.error(`[ERROR] [${new Date().toLocaleString()}] ${message}`, error);
 }
-  
+
 // =============================================================
-// PART 4: Command Management – Load Built-in & External Commands (Load 1 lần)
+// PART 4: COMMAND MANAGEMENT – LOAD BUILT-IN & EXTERNAL COMMANDS
 // =============================================================
 function loadCommands() {
   commands.clear();
   loadBuiltInCommands();
-  // Nếu thư mục modules tồn tại, load tất cả các file .js bên ngoài
+  // Load external commands từ modules (chỉ cần export 'name' và 'execute'; description là tùy chọn)
   if (fs.existsSync(modulesPath)) {
     fs.readdirSync(modulesPath).forEach(file => {
       if (file.endsWith(".js")) {
@@ -47,12 +76,11 @@ function loadCommands() {
           const commandPath = path.join(modulesPath, file);
           const command = require(commandPath);
           if (!command.name) {
-            logWarn(`Module ${file} không có thuộc tính 'name' và sẽ bị bỏ qua.`);
+            logWarn(`Module ${file} does not export 'name'; skipping.`);
             return;
           }
           commands.set(command.name.toLowerCase(), command);
-          logInfo(`Loaded external command: ${command.name}` +
-                  (command.description ? ` – ${command.description}` : ""));
+          logInfo(`Loaded external command: ${command.name}` + (command.description ? ` – ${command.description}` : ""));
         } catch (error) {
           logError(`Failed to load external command ${file}:`, error);
         }
@@ -61,35 +89,35 @@ function loadCommands() {
   }
 }
 loadCommands();
-  
-// Built-in Commands tích hợp trực tiếp
+
+// Built-in commands tích hợp trực tiếp
 function loadBuiltInCommands() {
-  // /start: Gửi lời chào mừng khi nhận từ chat private
+  // /start: Chào mừng (chỉ ở chat private)
   commands.set("start", {
     name: "start",
-    description: "Chào mừng người dùng (chỉ áp dụng cho chat riêng)",
+    description: "Display welcome message in private chats",
     args: false,
     usage: "",
     execute: async (bot, msg, args) => {
       if (msg.chat.type === "private") {
-        await bot.sendMessage(msg.chat.id, "Chào mừng bạn đến với bot của chúng tôi!");
+        await bot.sendMessage(msg.chat.id, lang.welcome);
       }
     }
   });
   // /ping: Phản hồi "pong"
   commands.set("ping", {
     name: "ping",
-    description: "Trả lời pong",
+    description: "Reply with pong",
     args: false,
     usage: "",
     execute: async (bot, msg, args) => {
       await bot.sendMessage(msg.chat.id, "pong");
     }
   });
-  // /sysinfo: Hiển thị thông tin hệ thống
+  // /sysinfo: Thông tin hệ thống
   commands.set("sysinfo", {
     name: "sysinfo",
-    description: "Hiển thị thông tin hệ thống của bot",
+    description: "Display system information",
     args: false,
     usage: "",
     execute: async (bot, msg, args) => {
@@ -105,10 +133,135 @@ IP: ${getIPAddress()}`;
       await bot.sendMessage(msg.chat.id, info);
     }
   });
+  // /time: Hiển thị thời gian hiện tại của server
+  commands.set("time", {
+    name: "time",
+    description: "Display current server time",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      const now = new Date();
+      await bot.sendMessage(msg.chat.id, `Current server time is: ${now.toLocaleString()}`);
+    }
+  });
+  // /uptime: Thời gian chạy của bot
+  commands.set("uptime", {
+    name: "uptime",
+    description: "Display process uptime",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      await bot.sendMessage(msg.chat.id, `Process uptime: ${Math.floor(process.uptime())} seconds`);
+    }
+  });
+  // /stats: Thông tin sử dụng tài nguyên
+  commands.set("stats", {
+    name: "stats",
+    description: "Display resource usage statistics",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      const memUsage = process.memoryUsage();
+      const rss = (memUsage.rss / (1024 ** 2)).toFixed(2);
+      const heapTotal = (memUsage.heapTotal / (1024 ** 2)).toFixed(2);
+      const heapUsed = (memUsage.heapUsed / (1024 ** 2)).toFixed(2);
+      const stats = `Resource Usage:
+RSS: ${rss} MB
+Heap Total: ${heapTotal} MB
+Heap Used: ${heapUsed} MB`;
+      await bot.sendMessage(msg.chat.id, stats);
+    }
+  });
+  // /list: Liệt kê các lệnh đã load
+  commands.set("list", {
+    name: "list",
+    description: "List all loaded commands",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      let listText = "Loaded Commands:\n";
+      commands.forEach((cmd, key) => {
+        listText += `/${key}`;
+        if (cmd.description) listText += ` - ${cmd.description}`;
+        listText += "\n";
+      });
+      await bot.sendMessage(msg.chat.id, listText);
+    }
+  });
+  // /echo: Phản hồi lại nội dung người dùng nhập
+  commands.set("echo", {
+    name: "echo",
+    description: "Echo back your input",
+    args: true,
+    usage: "<text>",
+    execute: async (bot, msg, args) => {
+      const text = args.join(" ");
+      await bot.sendMessage(msg.chat.id, `Echo: ${text}`);
+    }
+  });
+  // /help: Liệt kê các lệnh có sẵn
+  commands.set("help", {
+    name: "help",
+    description: "List available commands with descriptions",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      let helpText = "Available Commands:\n";
+      commands.forEach((cmd, key) => {
+        helpText += `/${key}`;
+        if (cmd.description) helpText += ` - ${cmd.description}`;
+        helpText += "\n";
+      });
+      await bot.sendMessage(msg.chat.id, helpText);
+    }
+  });
+  // /debug: Hiển thị thông tin debug
+  commands.set("debug", {
+    name: "debug",
+    description: "Display debug information",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      let debugInfo = "Loaded Commands:\n";
+      commands.forEach((_, key) => { debugInfo += `/${key}\n`; });
+      debugInfo += `Process Uptime: ${Math.floor(process.uptime())} seconds\n`;
+      debugInfo += `Memory Usage: ${JSON.stringify(process.memoryUsage())}\n`;
+      await bot.sendMessage(msg.chat.id, debugInfo);
+    }
+  });
+  // /config: (Admin-only) Hiển thị cấu hình hiện tại
+  commands.set("config", {
+    name: "config",
+    description: "Display current configuration (admin-only)",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      if (!config.adminChatId || msg.from.id !== config.adminChatId) {
+        await bot.sendMessage(msg.chat.id, "❗ You are not authorized to use this command.");
+        return;
+      }
+      await bot.sendMessage(msg.chat.id, `Current Configuration:\n${JSON.stringify(config, null, 2)}`);
+    }
+  });
+  // /reload: (Admin-only) Reload tất cả các lệnh và thông báo cho admin
+  commands.set("reload", {
+    name: "reload",
+    description: "Reload all commands (admin-only)",
+    args: false,
+    usage: "",
+    execute: async (bot, msg, args) => {
+      if (!config.adminChatId || msg.from.id !== config.adminChatId) {
+        await bot.sendMessage(msg.chat.id, "❗ You are not authorized to use this command.");
+        return;
+      }
+      loadCommands();
+      await bot.sendMessage(msg.chat.id, lang.reloadNotification);
+    }
+  });
   // /broadcast: (Admin-only) Gửi tin nhắn đến tất cả các chat đã lưu
   commands.set("broadcast", {
     name: "broadcast",
-    description: "Gửi tin nhắn đến tất cả các chat (admin-only)",
+    description: "Broadcast a message to all chats (admin-only)",
     args: true,
     usage: "<message>",
     execute: async (bot, msg, args) => {
@@ -120,82 +273,61 @@ IP: ${getIPAddress()}`;
       broadcastMessage(message);
     }
   });
-  // /reload: (Admin-only) Reload lại các lệnh
-  commands.set("reload", {
-    name: "reload",
-    description: "Reload lại tất cả các lệnh (admin-only)",
+  // /interactions: Hiển thị số lượng tương tác từ tt.json
+  commands.set("interactions", {
+    name: "interactions",
+    description: "Display total interaction count and details",
     args: false,
     usage: "",
     execute: async (bot, msg, args) => {
-      if (!config.adminChatId || msg.from.id !== config.adminChatId) {
-        await bot.sendMessage(msg.chat.id, "❗ You are not authorized to use this command.");
-        return;
+      const data = loadInteractions();
+      const total = Object.values(data).reduce((acc, cur) => acc + cur, 0);
+      let details = "Interaction Details:\n";
+      for (const chatId in data) {
+        details += `Chat ${chatId}: ${data[chatId]} interactions\n`;
       }
-      loadCommands();
-      await bot.sendMessage(msg.chat.id, "Commands reloaded.");
-    }
-  });
-  // /config: (Admin-only) Hiển thị cấu hình hiện tại
-  commands.set("config", {
-    name: "config",
-    description: "Hiển thị cấu hình hiện tại (admin-only)",
-    args: false,
-    usage: "",
-    execute: async (bot, msg, args) => {
-      if (!config.adminChatId || msg.from.id !== config.adminChatId) {
-        await bot.sendMessage(msg.chat.id, "❗ You are not authorized to use this command.");
-        return;
-      }
-      await bot.sendMessage(msg.chat.id, `Current Configuration:\n${JSON.stringify(config, null, 2)}`);
-    }
-  });
-  // /debug: Hiển thị thông tin debug
-  commands.set("debug", {
-    name: "debug",
-    description: "Hiển thị thông tin debug của bot",
-    args: false,
-    usage: "",
-    execute: async (bot, msg, args) => {
-      let debugInfo = "Loaded Commands:\n";
-      commands.forEach((_, key) => { debugInfo += `/${key}\n`; });
-      debugInfo += `Process Uptime: ${Math.floor(process.uptime())} seconds\n`;
-      debugInfo += `Memory Usage: ${JSON.stringify(process.memoryUsage())}\n`;
-      await bot.sendMessage(msg.chat.id, debugInfo);
-    }
-  });
-  // /echo: Phản hồi lại nội dung người dùng nhập
-  commands.set("echo", {
-    name: "echo",
-    description: "Phản hồi lại nội dung bạn nhập vào",
-    args: true,
-    usage: "<text>",
-    execute: async (bot, msg, args) => {
-      const text = args.join(" ");
-      await bot.sendMessage(msg.chat.id, `Echo: ${text}`);
-    }
-  });
-  // /help: Liệt kê tất cả các lệnh và mô tả (nếu có)
-  commands.set("help", {
-    name: "help",
-    description: "Hiển thị danh sách các lệnh và mô tả",
-    args: false,
-    usage: "",
-    execute: async (bot, msg, args) => {
-      let helpText = "Available Commands:\n";
-      commands.forEach((cmd, key) => {
-        helpText += `/${key}`;
-        if (cmd.description) {
-          helpText += ` - ${cmd.description}`;
-        }
-        helpText += "\n";
-      });
-      await bot.sendMessage(msg.chat.id, helpText);
+      await bot.sendMessage(msg.chat.id, `Total interactions: ${total}\n${details}`);
     }
   });
 }
   
 // =============================================================
-// PART 5A: Helper Function – Get IP Address
+// PART 5F: HELPER FUNCTION – LOAD INTERACTION DATA (tt.json)
+// =============================================================
+function loadInteractions() {
+  let interactions = {};
+  try {
+    if (fs.existsSync(ttFilePath)) {
+      interactions = JSON.parse(fs.readFileSync(ttFilePath, "utf8"));
+    }
+  } catch (error) {
+    logError("Error reading tt.json:", error);
+  }
+  return interactions;
+}
+  
+// =============================================================
+// PART 5G: HELPER FUNCTION – UPDATE INTERACTION DATA (tt.json)
+// =============================================================
+function updateInteraction(chatId) {
+  let interactions = {};
+  try {
+    if (fs.existsSync(ttFilePath)) {
+      interactions = JSON.parse(fs.readFileSync(ttFilePath, "utf8"));
+    }
+  } catch (error) {
+    logError("Error reading tt.json:", error);
+  }
+  interactions[chatId] = (interactions[chatId] || 0) + 1;
+  try {
+    fs.writeFileSync(ttFilePath, JSON.stringify(interactions, null, 2), "utf8");
+  } catch (error) {
+    logError("Error writing tt.json:", error);
+  }
+}
+  
+// =============================================================
+// PART 5H: HELPER FUNCTION – GET IP ADDRESS
 // =============================================================
 function getIPAddress() {
   const ifaces = Object.values(os.networkInterfaces())
@@ -205,9 +337,10 @@ function getIPAddress() {
 }
   
 // =============================================================
-// PART 6: Save Chat IDs (id.json)
+// PART 6: SAVE CHAT IDS & UPDATE INTERACTIONS
 // =============================================================
-function saveChatId(chatId) {
+function saveChatIdAndInteraction(chatId) {
+  // Lưu chatId vào id.json
   let chatIds = [];
   try {
     if (fs.existsSync(idFilePath)) {
@@ -221,22 +354,36 @@ function saveChatId(chatId) {
     fs.writeFileSync(idFilePath, JSON.stringify(chatIds, null, 2), "utf8");
     logInfo(`Saved chat ID: ${chatId}`);
   }
+  // Cập nhật tương tác trong tt.json
+  updateInteraction(chatId);
 }
   
 // =============================================================
-// PART 7A: Command Parsing – Hỗ trợ /command@botusername
+// PART 7I: COMMAND PARSING – SUPPORT /command@botusername
 // =============================================================
 function parseCommand(cmdText, prefix) {
   return cmdText.slice(prefix.length).split("@")[0];
 }
   
 // =============================================================
-// PART 8: Message Handling & Command Execution
+// PART 7J: MESSAGE HANDLING & COMMAND EXECUTION (INCLUDING AUTO-SCOOLD)
 // =============================================================
 bot.on("message", async (msg) => {
   if (!msg.text) return;
   const chatId = msg.chat.id;
-  saveChatId(chatId);
+  
+  // Cập nhật chat ID và tương tác
+  saveChatIdAndInteraction(chatId);
+  
+  // AUTO-SCOOLD: Nếu tin nhắn chứa từ khóa chỉ trích bot, tự động phản hồi
+  const lowerText = msg.text.toLowerCase();
+  const scoldTrigger = autoScoldKeywords.some(keyword => lowerText.includes(keyword));
+  if (scoldTrigger) {
+    const response = autoScoldResponses[Math.floor(Math.random() * autoScoldResponses.length)];
+    await bot.sendMessage(chatId, response);
+    return; // Dừng xử lý nếu auto-scold đã được kích hoạt
+  }
+  
   const prefix = config.prefix || '/';
   if (!msg.text.trim().startsWith(prefix)) return;
   
@@ -265,71 +412,41 @@ bot.on("message", async (msg) => {
 });
   
 // =============================================================
-// PART 9: Auto-Reload Based on Memory Usage (Check Every Second)
+// PART 8: AUTO-RELOAD BASED ON MEMORY USAGE (CHECK EVERY SECOND)
 // =============================================================
 setInterval(() => {
   const memUsage = process.memoryUsage();
-  if (memUsage.rss > 100 * 1024 * 1024) {
+  if (memUsage.rss > 100 * 1024 * 1024) { // Nếu RSS > 100 MB
     logInfo("High memory usage detected; reloading bot to optimize resource usage...");
     process.exit(1);
   }
 }, 1000);
   
 // =============================================================
-// PART 10: Scheduled Tasks – Hourly Message Broadcast
+// PART 9: CONFIG & MODULE WATCHER – AUTO-RESTART/HOT RELOAD
 // =============================================================
-function broadcastScheduledMessage(text) {
-  let chatIds = [];
-  try {
-    if (fs.existsSync(idFilePath)) {
-      chatIds = JSON.parse(fs.readFileSync(idFilePath, "utf8"));
-    }
-  } catch (error) {
-    logError("Error reading id.json during scheduled message:", error);
-  }
-  chatIds.forEach(chatId => {
-    bot.sendMessage(chatId, text)
-      .then(() => logInfo(`Scheduled message sent to chat ${chatId}`))
-      .catch(err => logError(`Failed to send scheduled message to chat ${chatId}:`, err));
-  });
+function setupWatchers() {
+  // Config watcher: khi config.json thay đổi, restart bot
+  chokidar.watch("./config.json", { ignoreInitial: true })
+    .on("all", (event, filePath) => {
+      logInfo(`Config file event (${event}) detected on ${filePath}. Restarting bot...`);
+      process.exit(1);
+    });
+  // Module watcher: khi có thay đổi (add, change, unlink) trong thư mục modules (ngoại trừ file JSON), hot-reload lệnh và thông báo admin
+  chokidar.watch(modulesPath, { ignoreInitial: true, ignored: file => file.endsWith(".json") })
+    .on("all", (event, filePath) => {
+      logInfo(`Module folder event (${event}) detected on file: ${filePath}. Reloading commands...`);
+      loadCommands();
+      if (config.adminChatId) {
+        bot.sendMessage(config.adminChatId, `Module change detected (${event}) on file: ${path.basename(filePath)}. Commands reloaded.`)
+          .catch(err => logError("Failed to notify admin about module change:", err));
+      }
+    });
 }
-  
-function checkTimeAndSendMessage() {
-  const now = new Date();
-  const hour = now.getHours();
-  let message = "";
-  if (hour === 7) {
-    message = "🌞 Good morning! Start your day with positive energy!";
-  } else if (hour === 12) {
-    message = "💤 It's 12 PM, take a break to recharge!";
-  } else if (hour === 18) {
-    message = "🌇 Good evening! Hope your night is relaxing!";
-  } else if (hour === 0) {
-    message = "🌙 It's midnight, time to sleep for a fresh start tomorrow!";
-  } else {
-    message = `🕰️ It's currently ${hour}:00. Make the most of your time!`;
-  }
-  broadcastScheduledMessage(message);
-}
-setInterval(checkTimeAndSendMessage, 60 * 60 * 1000);
-checkTimeAndSendMessage();
+setupWatchers();
   
 // =============================================================
-// PART 11: Config Watcher – Auto-Reload Configuration
-// =============================================================
-chokidar.watch("./config.json", { ignoreInitial: true })
-  .on("change", () => {
-    try {
-      delete require.cache[require.resolve("./config.json")];
-      config = require("./config.json");
-      logInfo("Configuration reloaded from config.json.");
-    } catch (error) {
-      logError("Failed to reload configuration:", error);
-    }
-  });
-  
-// =============================================================
-// PART 12: Resource Monitor – Log Memory Usage Periodically
+// PART 10: RESOURCE MONITOR – LOG MEMORY USAGE PERIODICALLY
 // =============================================================
 function logResourceUsage() {
   const memUsage = process.memoryUsage();
@@ -341,7 +458,7 @@ function logResourceUsage() {
 setInterval(logResourceUsage, 5 * 60 * 1000);
   
 // =============================================================
-// PART 13: Global Error Handling & Startup System Info
+// PART 11: GLOBAL ERROR HANDLING & STARTUP SYSTEM INFO
 // =============================================================
 process.on("uncaughtException", error => {
   logError("Uncaught Exception:", error);
@@ -359,6 +476,25 @@ console.log(`[INFO] IP Address: ${ipAddr}`);
 console.log("=================================");
   
 // =============================================================
-// PART 14: Start the Bot Immediately (No Login Required)
+// PART 12: BROADCAST HELPER FOR /BROADCAST COMMAND
+// =============================================================
+function broadcastMessage(message) {
+  let chatIds = [];
+  try {
+    if (fs.existsSync(idFilePath)) {
+      chatIds = JSON.parse(fs.readFileSync(idFilePath, "utf8"));
+    }
+  } catch (error) {
+    logError("Error reading id.json during broadcast:", error);
+  }
+  chatIds.forEach(chatId => {
+    bot.sendMessage(chatId, message)
+      .then(() => logInfo(`Broadcast message sent to chat ${chatId}`))
+      .catch(err => logError(`Failed to send broadcast message to chat ${chatId}:`, err));
+  });
+}
+  
+// =============================================================
+// PART 13: STARTUP NOTIFICATION
 // =============================================================
 logInfo("Bot startup complete.");
