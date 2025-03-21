@@ -2,19 +2,43 @@
   "8014033911": {
     "name": "bé na",
     "health": 100,
-    "hunger": 50,
+    "hunger": 20,
     "mood": "😊"
   },
   "7496425157": {
     "name": "Thú Cưng Bí Ẩn",
     "health": 100,
-    "hunger": 20,
+    "hunger": 50,
     "mood": "😊"
   },
   "7418258424": {
     "name": "Thú Cưng Bí Ẩn",
     "health": 100,
+    "hunger": 20,
+    "mood": "😊"
+  },
+  "5971634785": {
+    "name": "khánh béo",
+    "health": 100,
+    "hunger": 40,
+    "mood": "😊"
+  },
+  "7083506847": {
+    "name": "Thú Cưng Bí Ẩn",
+    "health": 100,
     "hunger": 30,
+    "mood": "😊"
+  },
+  "7792646534": {
+    "name": "Thú Cưng Bí Ẩn",
+    "health": 100,
+    "hunger": 20,
+    "mood": "😊"
+  },
+  "7522133230": {
+    "name": "Thú Cưng Bí Ẩn",
+    "health": 100,
+    "hunger": 20,
     "mood": "😊"
   }
 }

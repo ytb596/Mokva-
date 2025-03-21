@@ -161,5 +161,33 @@
       "8014033911",
       "6237327806"
     ]
+  },
+  "HZ7FEVB1": {
+    "value": 550,
+    "expiresAt": 1742427578328,
+    "formattedExpiresAt": "3/19/2025, 11:39:38 PM",
+    "timezone": "UTC",
+    "maxUses": 17,
+    "uses": 6,
+    "redeemedBy": [
+      "7083506847",
+      "8014033911",
+      "7443536973",
+      "6971704484",
+      "7068370356",
+      "7713922358"
+    ]
+  },
+  "L1MYNU7R": {
+    "value": 5500,
+    "expiresAt": 1746057048960,
+    "formattedExpiresAt": "4/30/2025, 11:50:48 PM",
+    "timezone": "UTC",
+    "maxUses": 50,
+    "uses": 2,
+    "redeemedBy": [
+      "6399001723",
+      "7083506847"
+    ]
   }
 }

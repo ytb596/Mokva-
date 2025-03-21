@@ -2,7 +2,7 @@ const fs = require("fs");
 const usersFile = "./modules/users.json";  
   
 module.exports = {  
-    name: "txx",  
+    name: "tx",  
     execute: async (bot, msg, args) => {  
         const userId = msg.from.id.toString();  
   
@@ -24,11 +24,11 @@ module.exports = {
         const mode = args[2]?.toLowerCase(); // Chế độ chơi: ván, đôi, v.v.  
           
         if (isNaN(betAmount) || betAmount <= 0) {  
-            return bot.sendMessage(msg.chat.id, "❌ Vui lòng nhập số xu muốn cược! Ví dụ: `txx 500 T ván`", { parse_mode: "Markdown" });  
+            return bot.sendMessage(msg.chat.id, "❌ Vui lòng nhập số xu muốn cược! Ví dụ: `tx 500 T ván`", { parse_mode: "Markdown" });  
         }  
   
         if (!choice || (choice !== "T" && choice !== "X")) {  
-            return bot.sendMessage(msg.chat.id, "❌ Vui lòng chọn **Tài (T)** hoặc **Xỉu (X)**! Ví dụ: `txx 500 T ván`", { parse_mode: "Markdown" });  
+            return bot.sendMessage(msg.chat.id, "❌ Vui lòng chọn **Tài (T)** hoặc **Xỉu (X)**! Ví dụ: `tx 500 T ván`", { parse_mode: "Markdown" });  
         }  
   
         if (users[userId].xu < betAmount) {  
